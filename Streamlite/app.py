@@ -36,7 +36,7 @@ if file:
             try:
                 with open(temp_path, "rb") as f:
                     files = {"file": f}
-                    response = requests.post(ENDPOINTS[file_type], files=files, timeout=300)
+                    response = requests.post(ENDPOINTS[file_type], files=files, timeout=600)
 
                 if response.status_code == 200:
                     result = response.json()

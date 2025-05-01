@@ -139,8 +139,8 @@ def process_image():
             device_type = "GPU" if use_gpu else "CPU"
             logger.info(f"Traitement de l'image sur {device_type}")
             
-            # Initialiser le processeur d'images et traiter l'image - sans passer use_gpu
-            image_processor = ImageProcessor()
+            # Initialiser le processeur d'images en passant use_gpu
+            image_processor = ImageProcessor(use_gpu=use_gpu)  # <-- Modification ici
             result = image_processor.process_image(filepath)
             
             # Nettoyer le fichier temporaire
@@ -261,8 +261,8 @@ def process_image_file(image_path):
     logger.info(f"Traitement de l'image sur {device_type}")
     
     start_time = time.time()
-    # Initialiser le processeur d'image sans passer le paramètre use_gpu
-    image_processor = ImageProcessor()
+    # Initialiser le processeur d'image en passant le paramètre use_gpu
+    image_processor = ImageProcessor(use_gpu=use_gpu)  # <-- Modification ici
     result = image_processor.process_image(image_path)
     execution_time = time.time() - start_time
     

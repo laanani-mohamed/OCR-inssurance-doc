@@ -26,9 +26,13 @@ def check_gpu_memory(required_memory_mb=1500):
         return False
  
 class ImageProcessor:
-    def __init__(self):
-        # Vérifier s'il y a assez de mémoire GPU
-        self.use_gpu = check_gpu_memory(required_memory_mb=1500)  # 1.5 Go pour PaddleOCR
+    def __init__(self, use_gpu=True):  # Ajout du paramètre use_gpu
+        # Vérifier s'il y a assez de mémoire GPU uniquement si use_gpu est True
+        if use_gpu:
+            self.use_gpu = check_gpu_memory(required_memory_mb=1500)  # 1.5 Go pour PaddleOCR
+        else:
+            self.use_gpu = False
+            
         if not self.use_gpu:
             print("Utilisation du CPU pour PaddleOCR")
             
