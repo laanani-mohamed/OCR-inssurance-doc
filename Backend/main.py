@@ -340,6 +340,6 @@ if __name__ == '__main__':
     else:
         # Démarrage normal de l'API
         debug_mode = False  # Simplifié ici
-        port = int(os.environ.get('PORT', 5000))
+        port = int(os.environ.get('PORT', 5090))
         logger.info(f"Démarrage de l'API OCR sur le port {port}, debug={debug_mode}")
         app.run(host='0.0.0.0', port=port, debug=debug_mode)

@@ -174,89 +174,89 @@ if st.session_state.document_type:
                     time.sleep(0.05)
                 
                 # Simulate API response based on document type
-            if st.session_state.document_type == "insurance":
-                # Sample insurance document response
-                st.session_state.analysis_results = {
-                    "extracted_info": {
-                        "numero_police": "123456789",
-                        "date_debut": "30 octobre 2024",
-                        "date_fin": "29 janvier 2025"
-                    },
-                    "execution_time": {
-                        "seconds": 53.37154936790466,
-                        "device": "CPU"
-                    }
-                }
-            else:
-                # Sample constat document response
-                constat_result = {
-                    "en_tete": {
-                        "date_accident": "15/04/2025",
-                        "heure_accident": "14:30",
-                        "lieu_accident": "Paris",
-                        "lieu_accident_precis": "Intersection Avenue des Champs-Élysées et Rue de Rivoli"
-                    },
-                    "partie_A": {
-                        "vehicule": {
-                            "telephone": "+33612345678",
-                            "type_vehicule": "Citroën C3",
-                            "n_immatriculation": "AB-123-CD",
-                            "venant_de": "Neuilly-sur-Seine",
-                            "allant_a": "Paris Centre"
+                if st.session_state.document_type == "insurance":
+                    # Sample insurance document response
+                    st.session_state.analysis_results = {
+                        "extracted_info": {
+                            "numero_police": "123456789",
+                            "date_debut": "30 octobre 2024",
+                            "date_fin": "29 janvier 2025"
                         },
-                        "assurance": {
-                            "nom": "Dubois",
-                            "prenom": "Jean",
-                            "adresse": "123 Rue de Paris, 75001 Paris",
-                            "n_attestation": "ATT12345",
-                            "n_police": "POL987654",
-                            "date_validite": "31/12/2025"
-                        },
-                        "conducteur": {
-                            "nom": "Dubois",
-                            "prenom": "Jean",
-                            "adresse": "123 Rue de Paris, 75001 Paris",
-                            "n_permis": "P12345678",
-                            "date_validite_permis": "15/06/2030"
-                        },
-                        "degat_apparence": {
-                            "description": "Pare-choc avant enfoncé, phare droit cassé"
-                        }
-                    },
-                    "partie_B": {
-                        "vehicule": {
-                            "telephone": "+33698765432",
-                            "type_vehicule": "Renault Clio",
-                            "n_immatriculation": "EF-456-GH",
-                            "venant_de": "Paris Centre",
-                            "allant_a": "Neuilly-sur-Seine"
-                        },
-                        "assurance": {
-                            "nom": "Martin",
-                            "prenom": "Sophie",
-                            "adresse": "456 Avenue Victor Hugo, 75016 Paris",
-                            "n_attestation": "ATT67890",
-                            "n_police": "POL123456",
-                            "date_validite": "15/05/2026"
-                        },
-                        "conducteur": {
-                            "nom": "Martin",
-                            "prenom": "Sophie",
-                            "adresse": "456 Avenue Victor Hugo, 75016 Paris",
-                            "n_permis": "P87654321",
-                            "date_validite_permis": "20/08/2028"
-                        },
-                        "degat_apparence": {
-                            "description": "Porte conducteur enfoncée, rétroviseur gauche cassé"
+                        "execution_time": {
+                            "seconds": 53.37154936790466,
+                            "device": "CPU"
                         }
                     }
-                }
-                st.session_state.analysis_results = constat_result
-            
-            st.session_state.processing = False
-            st.session_state.analysis_complete = True
-            st.experimental_rerun()
-        st.markdown("</div>", unsafe_allow_html=True)
+                else:
+                    st.session_state.analysis_results = {
+                        "en_tete": {
+                            "date_accident": "15/04/2025",
+                            "heure_accident": "14:30",
+                            "lieu_accident": "Paris",
+                            "lieu_accident_precis": "Intersection Avenue des Champs-Élysées et Rue de Rivoli"
+                        },
+                        "partie_A": {
+                            "vehicule": {
+                                "telephone": "+33612345678",
+                                "type_vehicule": "Citroën C3",
+                                "n_immatriculation": "AB-123-CD",
+                                "venant_de": "Neuilly-sur-Seine",
+                                "allant_a": "Paris Centre"
+                            },
+                            "assurance": {
+                                "nom": "Dubois",
+                                "prenom": "Jean",
+                                "adresse": "123 Rue de Paris, 75001 Paris",
+                                "n_attestation": "ATT12345",
+                                "n_police": "POL987654",
+                                "date_validite": "31/12/2025"
+                            },
+                            "conducteur": {
+                                "nom": "Dubois",
+                                "prenom": "Jean",
+                                "adresse": "123 Rue de Paris, 75001 Paris",
+                                "n_permis": "P12345678",
+                                "date_validite_permis": "15/06/2030"
+                            },
+                            "degat_apparence": {
+                                "description": "Pare-choc avant enfoncé, phare droit cassé"
+                            }
+                        },
+                        "partie_B": {
+                            "vehicule": {
+                                "telephone": "+33698765432",
+                                "type_vehicule": "Renault Clio",
+                                "n_immatriculation": "EF-456-GH",
+                                "venant_de": "Paris Centre",
+                                "allant_a": "Neuilly-sur-Seine"
+                            },
+                            "assurance": {
+                                "nom": "Martin",
+                                "prenom": "Sophie",
+                                "adresse": "456 Avenue Victor Hugo, 75016 Paris",
+                                "n_attestation": "ATT67890",
+                                "n_police": "POL123456",
+                                "date_validite": "15/05/2026"
+                            },
+                            "conducteur": {
+                                "nom": "Martin",
+                                "prenom": "Sophie",
+                                "adresse": "456 Avenue Victor Hugo, 75016 Paris",
+                                "n_permis": "P87654321",
+                                "date_validite_permis": "20/08/2028"
+                            },
+                            "degat_apparence": {
+                                "description": "Porte conducteur enfoncée, rétroviseur gauche cassé"
+                            }
+                        }
+                    }
+                st.session_state.processing = False
+                st.session_state.analysis_complete = True
+                st.experimental_rerun()
+
+            except Exception as e:
+                st.session_state.processing = False
+                st.error(f"Une erreur est survenue pendant l'analyse : {str(e)}")
 
     # Display analysis results
     if st.session_state.analysis_complete:
