@@ -7,19 +7,19 @@ import time
 from processor_image import ImageProcessor
 from processor_pdf import ConstatProcessor
 import torch
- 
+
 # Configuration du logging
 logging.basicConfig(level=logging.INFO,
-                   format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+                    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
- 
+
 # Fonction pour vérifier la mémoire GPU disponible
 def check_gpu_memory(required_memory_mb):
     """Vérifie s'il y a assez de mémoire GPU disponible.
     
     Args:
         required_memory_mb: Mémoire requise en Mo
-    
+        
     Returns:
         bool: True si assez de mémoire GPU disponible, False sinon
     """
@@ -40,24 +40,24 @@ def check_gpu_memory(required_memory_mb):
     except Exception as e:
         logger.error(f"Erreur lors de la vérification de la mémoire GPU: {str(e)}")
         return False
- 
+
 app = Flask(__name__)
 app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # Limite à 16 Mo
 app.config['UPLOAD_FOLDER'] = tempfile.gettempdir()  # Dossier temporaire pour les fichiers
- 
+
 # Extensions permises
 ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'pdf'}
- 
+
 def allowed_file(filename):
     """Vérifier si le fichier a une extension autorisée"""
     return '.' in filename and \
            filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
- 
+
 @app.route('/health', methods=['GET'])
 def health_check():
     """Endpoint pour vérifier que l'API fonctionne"""
     return jsonify({"status": "ok"})
- 
+
 @app.route('/models/check', methods=['GET'])
 def check_models():
     """Endpoint pour vérifier que les modèles sont chargés"""
@@ -109,7 +109,7 @@ def check_models():
             "status": "error",
             "message": str(e)
         }), 500
- 
+
 @app.route('/ocr/image', methods=['POST'])
 def process_image():
     """Endpoint pour traiter une image avec OCR"""
@@ -139,8 +139,8 @@ def process_image():
             device_type = "GPU" if use_gpu else "CPU"
             logger.info(f"Traitement de l'image sur {device_type}")
             
-            # Initialiser le processeur d'images et traiter l'image
-            image_processor = ImageProcessor(use_gpu=use_gpu)
+            # Initialiser le processeur d'images et traiter l'image - sans passer use_gpu
+            image_processor = ImageProcessor()
             result = image_processor.process_image(filepath)
             
             # Nettoyer le fichier temporaire
@@ -159,11 +159,11 @@ def process_image():
             logger.info(f"Image traitée en {execution_time:.2f} secondes sur {device_type}: {file.filename}")
             
             return jsonify(result)
-        
         except Exception as e:
             # Calculer le temps d'exécution même en cas d'erreur
             execution_time = time.time() - start_time
             logger.error(f"Erreur lors du traitement de l'image ({execution_time:.2f}s): {str(e)}")
+            
             return jsonify({
                 "error": f"Erreur lors du traitement: {str(e)}",
                 "execution_time": {
@@ -172,7 +172,7 @@ def process_image():
             }), 500
     
     return jsonify({"error": "Type de fichier non pris en charge"}), 400
- 
+
 @app.route('/ocr/pdf', methods=['POST'])
 def process_pdf():
     """Endpoint pour traiter un PDF de constat amiable"""
@@ -237,11 +237,11 @@ def process_pdf():
             logger.info(f"PDF traité en {execution_time:.2f} secondes sur {device_type}: {file.filename}")
             
             return jsonify(result)
-        
         except Exception as e:
             # Calculer le temps d'exécution même en cas d'erreur
             execution_time = time.time() - start_time
             logger.error(f"Erreur lors du traitement du PDF ({execution_time:.2f}s): {str(e)}")
+            
             return jsonify({
                 "error": f"Erreur lors du traitement: {str(e)}",
                 "execution_time": {
@@ -250,7 +250,40 @@ def process_pdf():
             }), 500
     
     return jsonify({"error": "Type de fichier non pris en charge"}), 400
- 
+
+def process_image_file(image_path):
+    """Fonction pour traiter une image spécifiée en ligne de commande"""
+    import json
+    
+    # Vérifier la mémoire GPU disponible
+    use_gpu = check_gpu_memory(1500)  # 1.5 Go pour PaddleOCR
+    device_type = "GPU" if use_gpu else "CPU"
+    logger.info(f"Traitement de l'image sur {device_type}")
+    
+    start_time = time.time()
+    # Initialiser le processeur d'image sans passer le paramètre use_gpu
+    image_processor = ImageProcessor()
+    result = image_processor.process_image(image_path)
+    execution_time = time.time() - start_time
+    
+    if isinstance(result, dict):
+        result['execution_time'] = {
+            'seconds': execution_time,
+            'device': device_type
+        }
+    else:
+        result = {
+            'data': result,
+            'execution_time': {
+                'seconds': execution_time,
+                'device': device_type
+            }
+        }
+    
+    print(json.dumps(result, indent=2, ensure_ascii=False))
+    print(f"Image traitée en {execution_time:.2f} secondes sur {device_type}")
+    return result
+
 def process_pdf_file(pdf_path):
     """Fonction pour traiter un PDF spécifié en ligne de commande"""
     import json
@@ -287,20 +320,26 @@ def process_pdf_file(pdf_path):
     print(json.dumps(result, indent=2, ensure_ascii=False))
     print(f"PDF traité en {execution_time:.2f} secondes sur {device_type}")
     return result
- 
+
 if __name__ == '__main__':
     import sys
     
-    # Si un argument est fourni, on considère que c'est un chemin de PDF à traiter
+    # Si un argument est fourni, on détermine si c'est un PDF ou une image
     if len(sys.argv) > 1:
-        pdf_path = sys.argv[1]
-        print(f"Traitement du PDF: {pdf_path}")
-        process_pdf_file(pdf_path)
+        file_path = sys.argv[1]
+        # Vérifier l'extension du fichier
+        if file_path.lower().endswith(('.pdf')):
+            print(f"Traitement du PDF: {file_path}")
+            process_pdf_file(file_path)
+        elif file_path.lower().endswith(('.png', '.jpg', '.jpeg')):
+            print(f"Traitement de l'image: {file_path}")
+            process_image_file(file_path)
+        else:
+            print(f"Format de fichier non pris en charge: {file_path}")
+            print("Extensions supportées: .pdf, .png, .jpg, .jpeg")
     else:
         # Démarrage normal de l'API
         debug_mode = False  # Simplifié ici
         port = int(os.environ.get('PORT', 5000))
-        
         logger.info(f"Démarrage de l'API OCR sur le port {port}, debug={debug_mode}")
         app.run(host='0.0.0.0', port=port, debug=debug_mode)
-

@@ -1,0 +1,35 @@
+# Dépendances de base pour PyTorch et traitement d'images
+
+torch
+torchvision
+numpy<2
+pillow 
+
+# OCR et traitement de documents
+transformers
+sentencepiece
+paddlepaddle
+paddleocr
+pymupdf
+git+https://github.com/mindee/doctr.git#egg=python-doctr[torch,viz]
+pdf2image
+ 
+# Traitement du texte et correction
+python-Levenshtein
+rapidfuzz
+
+# Dépendances utilitaires
+pandas
+matplotlib
+opencv-python
+scikit-learn
+huggingface-hub
+ 
+# Framework web (pour l'API)
+flask
+werkzeug
+gunicorn 
+psutil
+
+# doit être installé manuellement sur terminale 
+#sudo apt-get update && sudo apt-get install -y libgl1-mesa-glx libglib2.0-0
