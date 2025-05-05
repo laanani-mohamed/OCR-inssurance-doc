@@ -13,6 +13,9 @@ ENDPOINTS = {
     "pdf": f"{BACKEND_URL}/ocr/pdf"
 }
 
+# Token d'API pour l'authentification
+API_TOKEN = "7eFtEwvyrWwychOMQPeIVvQbrN3xFbJn_Pq1bEaRWTA"
+
 st.title("📄 OCR - Documents d'Assurance")
 
 # Type de document
@@ -38,8 +41,19 @@ if file:
             
             try:
                 with open(temp_path, "rb") as f:
+                    # Préparation des fichiers à envoyer
                     files = {"file": f}
-                    response = requests.post(ENDPOINTS[file_type], files=files, timeout=900)
+                    
+                    # Préparation des headers avec le token d'authentification
+                    headers = {"Authorization": f"Bearer {API_TOKEN}"}
+                    
+                    # Envoi de la requête avec le token dans les headers
+                    response = requests.post(
+                        ENDPOINTS[file_type],
+                        files=files,
+                        headers=headers,
+                        timeout=900
+                    )
                 
                 if response.status_code == 200:
                     result = response.json()

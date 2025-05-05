@@ -21,7 +21,7 @@ class ConstatProcessor:
         """
         # Vérifier la mémoire GPU disponible avant de charger les modèles
         if use_gpu:
-            self.use_gpu = self.check_gpu_memory(required_memory_mb=3000)  # 3 Go requis pour TrOCR large
+            self.use_gpu = self.usage_gpu()  # Correction: Appeler la méthode statique correctement
         else:
             self.use_gpu = False
         
@@ -205,6 +205,29 @@ class ConstatProcessor:
         except Exception as e:
             print(f"Erreur lors de la vérification de la mémoire GPU: {str(e)}")
             return False
+ 
+
+    @staticmethod  # Ajout du décorateur pour indiquer clairement que c'est une méthode statique
+    def usage_gpu():
+        """
+        Vérifie si un GPU est disponible pour le traitement.
+        Returns:
+            bool: True si le GPU est disponible, False sinon.
+        """
+        import torch
+        # Vérifier si CUDA (GPU) est disponible
+        gpu_available = torch.cuda.is_available()
+        if gpu_available:
+            # Obtenir le nom du périphérique GPU pour le logging
+            device_name = torch.cuda.get_device_name(0)
+            print(f"GPU disponible: {device_name}")
+            # Définir l'appareil par défaut comme le GPU
+            device = torch.device("cuda")
+            return True
+        else:
+            print("GPU non disponible. Utilisation du CPU à la place.")
+            return False
+        
  
     def init_structure_constat(self):
         """Structure de données pour le constat amiable"""

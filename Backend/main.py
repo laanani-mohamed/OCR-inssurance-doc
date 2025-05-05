@@ -1,4 +1,4 @@
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, abort
 import os
 from werkzeug.utils import secure_filename
 import tempfile
@@ -13,37 +13,61 @@ logging.basicConfig(level=logging.INFO,
                     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
 
-# Fonction pour vérifier la mémoire GPU disponible
-def check_gpu_memory(required_memory_mb):
-    """Vérifie s'il y a assez de mémoire GPU disponible.
-    
-    Args:
-        required_memory_mb: Mémoire requise en Mo
-        
-    Returns:
-        bool: True si assez de mémoire GPU disponible, False sinon
+# Vérifier la mémoire GPU disponible
+def usage_gpu():
     """
-    if not torch.cuda.is_available():
-        logger.info("GPU non disponible, utilisation du CPU.")
-        return False
-    
-    try:
-        # Récupérer les informations de mémoire GPU
-        free_memory = torch.cuda.mem_get_info()[0] / (1024 * 1024)  # En Mo
-        logger.info(f"Mémoire GPU libre: {free_memory:.2f} Mo")
-        
-        if free_memory < required_memory_mb:
-            logger.warning(f"Mémoire GPU insuffisante ({free_memory:.2f} Mo libre, {required_memory_mb} Mo requis)")
-            return False
-        
+    Vérifie si un GPU est disponible pour le traitement.
+    Returns:
+        bool: True si le GPU est disponible, False sinon.
+    """
+
+    import torch
+    # Vérifier si CUDA (GPU) est disponible
+    gpu_available = torch.cuda.is_available()
+    if gpu_available:
+        # Obtenir le nom du périphérique GPU pour le logging
+        device_name = torch.cuda.get_device_name(0)
+        print(f"GPU disponible: {device_name}")
+        # Définir l'appareil par défaut comme le GPU
+        device = torch.device("cuda")
         return True
-    except Exception as e:
-        logger.error(f"Erreur lors de la vérification de la mémoire GPU: {str(e)}")
+
+    else:
+        print("GPU non disponible. Utilisation du CPU à la place.")
         return False
+ 
+
+
 
 app = Flask(__name__)
 app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # Limite à 16 Mo
 app.config['UPLOAD_FOLDER'] = tempfile.gettempdir()  # Dossier temporaire pour les fichiers
+
+API_TOKEN = "7eFtEwvyrWwychOMQPeIVvQbrN3xFbJn_Pq1bEaRWTA"
+
+def verify_token():
+    """Vérifie que le token API fourni est valide"""
+    # Vérifier dans les headers d'abord (méthode recommandée)
+    token = request.headers.get('Authorization')
+    if token and token.startswith('Bearer '):
+        token = token[7:]  # Retirer le préfixe 'Bearer '
+    
+    # Si pas dans les headers, vérifier dans les paramètres de formulaire
+    if not token:
+        token = request.form.get("token")
+    
+    # Si pas dans le formulaire, vérifier dans les paramètres d'URL
+    if not token:
+        token = request.args.get("token")
+    
+    # Vérifier si le token est valide
+    if token != API_TOKEN:
+        logger.warning("Token invalide fourni.")
+        abort(403, description="Token invalide")
+    
+    logger.info("Token valide, accès autorisé")
+    return True
+
 
 # Extensions permises
 ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'pdf'}
@@ -73,13 +97,13 @@ def check_models():
         # Vérifier PaddleOCR
         from paddleocr import PaddleOCR
         import paddle
-        use_gpu_paddle = check_gpu_memory(1500)  # 1.5 Go minimum pour PaddleOCR
+        use_gpu_paddle = usage_gpu()  
         paddle_ocr = PaddleOCR(use_angle_cls=True, lang='fr', use_gpu=use_gpu_paddle)
         paddle_device = "GPU" if use_gpu_paddle else "CPU"
         
         # Vérifier TrOCR
         from transformers import TrOCRProcessor, VisionEncoderDecoderModel
-        use_gpu_trocr = check_gpu_memory(3000)  # 3 Go minimum pour TrOCR large
+        use_gpu_trocr = usage_gpu() 
         device_trocr = torch.device("cuda" if use_gpu_trocr else "cpu")
         trocr_processor = TrOCRProcessor.from_pretrained("microsoft/trocr-large-handwritten")
         trocr_model = VisionEncoderDecoderModel.from_pretrained("microsoft/trocr-large-handwritten").to(device_trocr)
@@ -87,7 +111,7 @@ def check_models():
         
         # Vérifier doctr
         from doctr.models import ocr_predictor, fast_tiny
-        use_gpu_doctr = check_gpu_memory(1000)  # 1 Go minimum pour doctr
+        use_gpu_doctr = usage_gpu()  
         device_doctr = torch.device("cuda" if use_gpu_doctr else "cpu")
         doctr_model = fast_tiny(pretrained=True).to(device_doctr)
         doctr_device = "GPU" if use_gpu_doctr else "CPU"
@@ -113,6 +137,7 @@ def check_models():
 @app.route('/ocr/image', methods=['POST'])
 def process_image():
     """Endpoint pour traiter une image avec OCR"""
+    verify_token()
     # Démarrer le chronomètre
     start_time = time.time()
     
@@ -135,7 +160,7 @@ def process_image():
             file.save(filepath)
             
             # Vérifier la mémoire GPU disponible avant d'initialiser le processeur
-            use_gpu = check_gpu_memory(1500)  # 1.5 Go pour PaddleOCR
+            use_gpu = usage_gpu()  
             device_type = "GPU" if use_gpu else "CPU"
             logger.info(f"Traitement de l'image sur {device_type}")
             
@@ -176,6 +201,8 @@ def process_image():
 @app.route('/ocr/pdf', methods=['POST'])
 def process_pdf():
     """Endpoint pour traiter un PDF de constat amiable"""
+    # Vérification du token avant tout traitement
+    verify_token()
     # Démarrer le chronomètre
     start_time = time.time()
     
@@ -198,7 +225,7 @@ def process_pdf():
             file.save(filepath)
             
             # Vérifier la mémoire GPU disponible avant d'initialiser le processeur
-            use_gpu = check_gpu_memory(3000)  # 3 Go pour TrOCR large
+            use_gpu = usage_gpu()
             device_type = "GPU" if use_gpu else "CPU"
             logger.info(f"Traitement du PDF sur {device_type}")
             
@@ -256,7 +283,7 @@ def process_image_file(image_path):
     import json
     
     # Vérifier la mémoire GPU disponible
-    use_gpu = check_gpu_memory(1500)  # 1.5 Go pour PaddleOCR
+    use_gpu = usage_gpu()
     device_type = "GPU" if use_gpu else "CPU"
     logger.info(f"Traitement de l'image sur {device_type}")
     
@@ -289,7 +316,7 @@ def process_pdf_file(pdf_path):
     import json
     
     # Vérifier la mémoire GPU disponible
-    use_gpu = check_gpu_memory(3000)  # 3 Go pour TrOCR large
+    use_gpu = usage_gpu()
     device_type = "GPU" if use_gpu else "CPU"
     logger.info(f"Traitement du PDF sur {device_type}")
     

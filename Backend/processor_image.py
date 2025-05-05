@@ -24,12 +24,35 @@ def check_gpu_memory(required_memory_mb=1500):
     except Exception as e:
         print(f"Erreur lors de la vérification de la mémoire GPU: {str(e)}")
         return False
- 
+
+def usage_gpu():
+    """
+    Vérifie si un GPU est disponible pour le traitement.
+    Returns:
+        bool: True si le GPU est disponible, False sinon.
+    """
+
+    import torch
+    # Vérifier si CUDA (GPU) est disponible
+    gpu_available = torch.cuda.is_available()
+    if gpu_available:
+        # Obtenir le nom du périphérique GPU pour le logging
+        device_name = torch.cuda.get_device_name(0)
+        print(f"GPU disponible: {device_name}")
+        # Définir l'appareil par défaut comme le GPU
+        device = torch.device("cuda")
+        return True
+
+    else:
+        print("GPU non disponible. Utilisation du CPU à la place.")
+        return False
+
+
 class ImageProcessor:
     def __init__(self, use_gpu=True):  # Ajout du paramètre use_gpu
         # Vérifier s'il y a assez de mémoire GPU uniquement si use_gpu est True
         if use_gpu:
-            self.use_gpu = check_gpu_memory(required_memory_mb=1500)  # 1.5 Go pour PaddleOCR
+            self.use_gpu = usage_gpu()
         else:
             self.use_gpu = False
             
