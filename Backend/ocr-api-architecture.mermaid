@@ -1,0 +1,62 @@
+flowchart TB
+    subgraph Client
+        C[Client Application] -->|HTTP Request with file| E1
+        E1[/API Endpoints/] -->|Response JSON| C
+    end
+    
+    subgraph "Flask API Server"
+        E1 -->|POST| E2[/ocr/image/]
+        E1 -->|POST| E3[/ocr/pdf/]
+        E1 -->|GET| E4[/health/]
+        E1 -->|GET| E5[/models/check/]
+        
+        E2 --> S1[Security Layer]
+        E3 --> S1
+        E5 --> S1
+        
+        S1 -->|verify_token| AUTH[Token Authentication]
+        
+        S1 --> P1[Process Image]
+        S1 --> P2[Process PDF]
+        S1 --> H1[Health Check]
+        S1 --> MC[Model Check]
+        
+        P1 --> IP[ImageProcessor]
+        P2 --> CP[ConstatProcessor]
+        
+        MC -->|Check| M1[PaddleOCR]
+        MC -->|Check| M2[TrOCR]
+        MC -->|Check| M3[Doctr]
+        
+        IP -->|Uses| M1
+        IP -->|Uses| M2
+        IP -->|Uses| M3
+        
+        CP -->|Uses| M1
+        CP -->|Uses| M2
+        CP -->|Uses| M3
+    end
+    
+    subgraph "Hardware Resources"
+        GPU[GPU Detection]
+        CPU[CPU Fallback]
+        TEMP[Temporary Storage]
+        
+        IP --> GPU
+        CP --> GPU
+        GPU -->|Not Available| CPU
+        IP --> TEMP
+        CP --> TEMP
+    end
+    
+    classDef endpoints fill:#f96,stroke:#333,stroke-width:2px
+    classDef processor fill:#bbf,stroke:#333,stroke-width:2px
+    classDef models fill:#bfb,stroke:#333,stroke-width:2px
+    classDef hardware fill:#fbb,stroke:#333,stroke-width:2px
+    classDef security fill:#fbf,stroke:#333,stroke-width:2px
+    
+    class E1,E2,E3,E4,E5 endpoints
+    class IP,CP processor
+    class M1,M2,M3 models
+    class GPU,CPU,TEMP hardware
+    class S1,AUTH security
